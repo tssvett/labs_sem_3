@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+Created-By: Жиляев Максим 6201-010302D
+Main-Class: MyFirstClass
