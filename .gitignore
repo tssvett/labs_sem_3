@@ -5,6 +5,7 @@ out/
 .idea/
 laba1/src/
 *iml
+laba2/.gitignore
 
 ### Eclipse ###
 .apt_generated
