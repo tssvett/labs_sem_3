@@ -4,7 +4,7 @@ import functions.TabulatedFunction;
 public class Main {
     public static void main(String[] args) {
         // y = 3x
-        double values[] = {3, 6, 9, 12, 15, 18, 21, 24, 27, 30};
+        double[] values = {3, 6, 9, 12, 15, 18, 21, 24, 27, 30};
         TabulatedFunction f = new TabulatedFunction(1, 10, values);
 
         System.out.println("====================================================================");
@@ -12,6 +12,7 @@ public class Main {
         System.out.println(f.getFunctionValue(3));
         System.out.println(f.getFunctionValue(3.5));
         System.out.println(f.getFunctionValue(3.6));
+        System.out.println(f.getFunctionValue(4));
         System.out.println(f.getFunctionValue(0));
         System.out.println("====================================================================");
 

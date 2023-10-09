@@ -1,131 +1,181 @@
 package functions;
 
 public class TabulatedFunction {
-    private FunctionPoint points_list[];
-    private int point_number;
+    private FunctionPoint[] pointsList;
+    private int pointsNumber;
+
 
     public TabulatedFunction(double leftX, double rightX, int pointsCount){
-        this.points_list = new FunctionPoint[pointsCount];
+        //Конструктор, создающий табличную функцию с указанным количеством точек между границами домена leftX и rightX.
+        this.pointsList = new FunctionPoint[pointsCount];
         double interval = (rightX - leftX) / (pointsCount - 1);
         for (int i = 0; i < pointsCount; i++){
-            this.points_list[i] = new FunctionPoint(leftX + i * interval, 0);
+            this.pointsList[i] = new FunctionPoint(leftX + i * interval, 0);
         }
-        this.point_number = pointsCount;
+        this.pointsNumber = pointsCount;
     }
 
     public TabulatedFunction(double leftX, double rightX, double[] values){
-        this.points_list = new FunctionPoint[values.length];
+        //Конструктор, создающий табличную функцию с точками в указанных координатах X и соответствующих значениях Y.
+        this.pointsList = new FunctionPoint[values.length];
         double interval = (rightX - leftX) / (values.length - 1);
         for (int i = 0; i < values.length; i++){
-            this.points_list[i] = new FunctionPoint(leftX + i * interval, values[i]);
+            this.pointsList[i] = new FunctionPoint(leftX + i * interval, values[i]);
         }
-        this.point_number = values.length;
+        this.pointsNumber = values.length;
     }
 
     public double getLeftDomainBorder(){
-        return this.points_list[0].getX();
+        //Возвращает координату X левой границы.
+        return this.pointsList[0].getX();
     }
 
     public double getRightDomainBorder(){
-        return this.points_list[this.getPointsCount() - 1].getX();
+        //Возвращает координату Х правой границы.
+        return this.pointsList[this.getPointsCount() - 1].getX();
     }
 
 
     private boolean isInsideBorder(double x){
+        //Проверка на принадлежности точки по Х  в заданном промежутке
         return (x >= this.getLeftDomainBorder() && x <= this.getRightDomainBorder());
     }
 
-    private double LinearInterpolation(double x, int pointNumber){
+    private double linearInterpolation(double x, int pointNumber){
+        //Линейная интерполяция для определения значения точек, лежащих между другими точками
         /*
              y2 - y1 = k(x2 - x1) + b
              k = (y2 - y1) / (x2 - x1)
              b = y1 - k
         */
-        double k = (this.points_list[pointNumber].getY() - this.points_list[pointNumber+1].getY()) / (this.points_list[pointNumber].getX() - this.points_list[pointNumber + 1].getX());
-        double b = this.points_list[pointNumber].getY() - k * this.points_list[pointNumber].getX();
+        double k = (this.pointsList[pointNumber].getY() - this.pointsList[pointNumber+1].getY()) / (this.pointsList[pointNumber].getX() - this.pointsList[pointNumber + 1].getX());
+        double b = this.pointsList[pointNumber].getY() - k * this.pointsList[pointNumber].getX();
         return k * x + b;
     }
 
-    public double getFunctionValue(double x){
-        if (!isInsideBorder(x)){
-                return Double.NaN;
-        }
-        int i = 0;
-        while(i < this.points_list.length){
-            //Если точка есть в списке точек, то возвращаем ее значение
-            if (this.points_list[i].getX() == x){
-                return this.points_list[i].getY();
+    private int[] binarySearch(double x){
+        //Алгоритм бинарного поиска. Ищет индекс точки, в которую будем ее вставлять
+        //Возвращаем значение в зависимости от метки 0 или 1.
+        //Если метка 1, то элемент есть и возвращаем его индекс.
+        //Если метка 0, то элемента нет и возвращаем его левого соседа.
+        int[] results = new int[2];
+        int left = 0;
+        int right = getPointsCount() - 1;
+        while (left <= right){
+            int middle = (left + right) / 2;
+            double guess = this.pointsList[middle].getX();
+            if (guess == x){
+                results[0] = middle;
+                results[1] = 1;
+                return results;
             }
-            //Если точки нет в списке, то ищем ближайшую точку
-            else if (x < this.points_list[i].getX()) {
-                //Когда находим, перестаем искать
-                break;
+            if (guess < x){
+                left = middle + 1;
             }
-            i++;
+            if (guess > x){
+                right = middle - 1;
+            }
         }
-        //Интерполируем по найденной ближайшей точке
-        return LinearInterpolation(x, i);
+        results[0] = left;
+        results[1] = 0;
+        return results;
     }
 
+    public double getFunctionValue(double x) {
+        //Вычисляет и возвращает значение функции по заданной координате X с использованием линейной интерполяции.
+        if (!isInsideBorder(x)) {
+            return Double.NaN;
+        }
+        int[] result = binarySearch(x);
+        if (result[1] == 1){
+            return this.pointsList[result[0]].getY();
+        }
+        else {
+            return linearInterpolation(x, result[0]);
+        }
+    }
+
+
     public int getPointsCount(){
-        return this.point_number;
+        //Возвращает число точек в функции
+        return this.pointsNumber;
     }
 
     public FunctionPoint getPoint(int i){
-        return this.points_list[i];
+        //Возвращает точку по индексу
+        return this.pointsList[i];
     }
 
     private boolean isIncorrectPosition(FunctionPoint point, int index){
-        return (point.getX() < this.points_list[index-1].getX() || point.getX() > this.points_list[index + 1].getX());
+        //Проверка на недопустимую точку
+        return (point.getX() < this.pointsList[index-1].getX() || point.getX() > this.pointsList[index + 1].getX());
     }
     public void setPoint(int index, FunctionPoint point){
+        //Устанавливает точку по индексу
         if (isIncorrectPosition(point, index)){
             System.out.println("Недопустимая точка!");
         }
-        //Пометка! может быть сначала стоит заменить на нулл
-        this.points_list[index] = point;
+        this.pointsList[index] = point;
     }
 
     public double getPointX(int index){
-        return this.points_list[index].getX();
+        //Возвращает координату Х точки по индексу
+        return this.pointsList[index].getX();
     }
 
     public void setPointX(int index, double x){
-        if (isIncorrectPosition(this.points_list[index], index)){
+        // Устанавливает координату Х точки по индексу
+        if (isIncorrectPosition(this.pointsList[index], index)){
             System.out.println("Недопустимая точка!");
         }
-        this.points_list[index].setX(x);
+        this.pointsList[index].setX(x);
     }
 
     public double getPointY(int index){
-        return this.points_list[index].getY();
+        //Возвращает координату Y точки по индексу
+        return this.pointsList[index].getY();
     }
 
     public void setPointY(int index, double y){
-        this.points_list[index].setY(y);
+        //Устанавливает координату Y точки по индексу
+        this.pointsList[index].setY(y);
     }
 
     public void deletePoint(int index){
+        //Удаляет точку по индексу. Так же изменяет размер массива при необходимости.
         if (index >= 0 && index < getPointsCount()) {
-            System.arraycopy(this.points_list, index + 1, this.points_list, index, this.getPointsCount() - index);
-            this.point_number--;
+            System.arraycopy(this.pointsList, index + 1, this.pointsList, index, this.getPointsCount() - index);
+            this.pointsNumber--;
+        }
+        if (getPointsCount() < this.pointsList.length / 2){
+            decreaseCapacity();
         }
     }
 
 
     private void increaseCapacity(){
-        int new_size = getPointsCount() * 2;
-        FunctionPoint[] new_points_list = new FunctionPoint[new_size];
-        System.arraycopy(this.points_list, 0, new_points_list, 0, getPointsCount());
-        this.points_list = new_points_list;
+        //Увеличивает размер массива в два раза
+        int newSize = getPointsCount() * 2;
+        FunctionPoint[] newPointsList = new FunctionPoint[newSize];
+        System.arraycopy(this.pointsList, 0, newPointsList, 0, getPointsCount());
+        this.pointsList = newPointsList;
     }
 
-    private int BinarySearch(double x){
+    private void decreaseCapacity(){
+        //Создает массив по количеству точек в массиве.
+        FunctionPoint[] newPointsList = new FunctionPoint[getPointsCount()];
+        System.arraycopy(this.pointsList, 0, newPointsList, 0, getPointsCount());
+        this.pointsList = newPointsList;
+
+    }
+
+    private int FindIndex(double x){
+        //Алгоритм бинарного поиска. Ищет индекс точки, в которую будем ее вставлять
         int left = 0;
         int right = getPointsCount() - 1;
         while (left <= right){
             int middle = (left + right) / 2;
-            double guess = this.points_list[middle].getX();
+            double guess = this.pointsList[middle].getX();
             if (guess == x){
                 return -1;
             }
@@ -140,22 +190,23 @@ public class TabulatedFunction {
     }
 
     public void addPoint(FunctionPoint point){
-        int current_size = getPointsCount() + 1;
+        //Добавление точки с сохранением сортировки по х
+        int currentSize = getPointsCount() + 1;
 
-        if (current_size > getPointsCount()){
+        if (currentSize > getPointsCount()){
             increaseCapacity();
         }
-        int index_to_insert = BinarySearch(point.getX());
+        int indexToInsert = FindIndex(point.getX());
 
-        if (index_to_insert == -1){
+        if (indexToInsert == -1){
             System.out.println("Такая точка уже есть! Нельзя вставить дубликат.");
             return;
         }
         else {
-            System.arraycopy(this.points_list, index_to_insert, this.points_list, index_to_insert + 1, current_size - index_to_insert);
-            this.points_list[index_to_insert] = point;
+            System.arraycopy(this.pointsList, indexToInsert, this.pointsList, indexToInsert + 1, currentSize - indexToInsert);
+            this.pointsList[indexToInsert] = point;
         }
-        this.point_number++;
+        this.pointsNumber++;
 
     }
 
