@@ -1,0 +1,1 @@
+jar —create —file myfirst.jar —manifest manifest.mf -C work_directory/ .

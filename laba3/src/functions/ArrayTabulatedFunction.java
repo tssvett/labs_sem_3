@@ -1,12 +1,15 @@
 package functions;
 
-public class TabulatedFunction {
+public class ArrayTabulatedFunction implements TabulatedFunction {
     private FunctionPoint[] pointsList;
     private int pointsNumber;
 
 
-    public TabulatedFunction(double leftX, double rightX, int pointsCount){
+    public ArrayTabulatedFunction(double leftX, double rightX, int pointsCount){
         //Конструктор, создающий табличную функцию с указанным количеством точек между границами домена leftX и rightX.
+        if (leftX >= rightX || pointsCount < 2){
+            throw new IllegalArgumentException("[!] Ошибка! Левая граница должна быть меньше правой. Точек должно быть больше или равно двух.");
+        }
         this.pointsList = new FunctionPoint[pointsCount];
         double interval = (rightX - leftX) / (pointsCount - 1);
         for (int i = 0; i < pointsCount; i++){
@@ -15,8 +18,11 @@ public class TabulatedFunction {
         this.pointsNumber = pointsCount;
     }
 
-    public TabulatedFunction(double leftX, double rightX, double[] values){
+    public ArrayTabulatedFunction(double leftX, double rightX, double[] values){
         //Конструктор, создающий табличную функцию с точками в указанных координатах X и соответствующих значениях Y.
+        if (leftX >= rightX || values.length < 2){
+            throw new IllegalArgumentException("[!] Ошибка! Левая граница должна быть меньше правой.  Точек должно быть больше или равно двух.");
+        }
         this.pointsList = new FunctionPoint[values.length];
         double interval = (rightX - leftX) / (values.length - 1);
         for (int i = 0; i < values.length; i++){
@@ -103,47 +109,78 @@ public class TabulatedFunction {
 
     public FunctionPoint getPoint(int i){
         //Возвращает точку по индексу
+        if (!isCorrectIndex(i)){
+            throw new FunctionPointIndexOutOfBoundsException(i);
+        }
         return this.pointsList[i];
     }
 
-    private boolean isIncorrectPosition(FunctionPoint point, int index){
+    private boolean isInCorrectSortedPlace(FunctionPoint point, int index){
         //Проверка на недопустимую точку
         return (point.getX() < this.pointsList[index-1].getX() || point.getX() > this.pointsList[index + 1].getX());
     }
-    public void setPoint(int index, FunctionPoint point){
+
+    private boolean isCorrectIndex(int index){
+        //Проверка на корректность индекса
+        return (index >= 0 && index < this.pointsNumber);
+    }
+    public void setPoint(int index, FunctionPoint point) throws FunctionPointIndexOutOfBoundsException,
+            InappropriateFunctionPointException {
         //Устанавливает точку по индексу
-        if (isIncorrectPosition(point, index)){
-            System.out.println("Недопустимая точка!");
+        if (!isCorrectIndex(index)){
+            throw new FunctionPointIndexOutOfBoundsException(index);
+        }
+        if (isInCorrectSortedPlace(point, index)){
+            throw new InappropriateFunctionPointException(index);
         }
         this.pointsList[index] = point;
     }
 
     public double getPointX(int index){
         //Возвращает координату Х точки по индексу
+        if (!isCorrectIndex(index)){
+            throw new FunctionPointIndexOutOfBoundsException(index);
+        }
         return this.pointsList[index].getX();
     }
 
-    public void setPointX(int index, double x){
+    public void setPointX(int index, double x) throws FunctionPointIndexOutOfBoundsException,
+            InappropriateFunctionPointException {
         // Устанавливает координату Х точки по индексу
-        if (isIncorrectPosition(this.pointsList[index], index)){
-            System.out.println("Недопустимая точка!");
+        if (!isCorrectIndex(index)){
+            throw new FunctionPointIndexOutOfBoundsException(index);
+        }
+        if (isInCorrectSortedPlace(this.pointsList[index], index)){
+            throw new InappropriateFunctionPointException(index);
         }
         this.pointsList[index].setX(x);
     }
 
     public double getPointY(int index){
         //Возвращает координату Y точки по индексу
+        if (!isCorrectIndex(index)){
+            throw new FunctionPointIndexOutOfBoundsException(index);
+        }
         return this.pointsList[index].getY();
     }
 
     public void setPointY(int index, double y){
         //Устанавливает координату Y точки по индексу
+        if (!isCorrectIndex(index)){
+            throw new FunctionPointIndexOutOfBoundsException(index);
+        }
         this.pointsList[index].setY(y);
     }
 
     public void deletePoint(int index){
         //Удаляет точку по индексу. Так же изменяет размер массива при необходимости.
-        if (index >= 0 && index < getPointsCount()) {
+        if (!isCorrectIndex(index)){
+            throw new FunctionPointIndexOutOfBoundsException(index);
+        }
+        else if (this.pointsNumber < 3){
+            throw new IllegalStateException("[!] Ошибка! Точек и так меньше трех.... Куда меньше??");
+        }
+        else if (index >= 0 && index < getPointsCount()) {
             System.arraycopy(this.pointsList, index + 1, this.pointsList, index, this.getPointsCount() - index);
             this.pointsNumber--;
         }
@@ -189,7 +226,7 @@ public class TabulatedFunction {
         return left;
     }
 
-    public void addPoint(FunctionPoint point){
+    public void addPoint(FunctionPoint point) throws InappropriateFunctionPointException {
         //Добавление точки с сохранением сортировки по х
         int currentSize = getPointsCount() + 1;
 
@@ -199,8 +236,7 @@ public class TabulatedFunction {
         int indexToInsert = findIndex(point.getX());
 
         if (indexToInsert == -1){
-            System.out.println("Такая точка уже есть! Нельзя вставить дубликат.");
-            return;
+            throw new InappropriateFunctionPointException("Ошибка! Попытка добавить точку с координатой Х, которая уже существует.");
         }
         else {
             System.arraycopy(this.pointsList, indexToInsert, this.pointsList, indexToInsert + 1, currentSize - indexToInsert);
