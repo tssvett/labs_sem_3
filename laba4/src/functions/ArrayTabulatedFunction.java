@@ -1,6 +1,8 @@
 package functions;
 
-public class ArrayTabulatedFunction implements TabulatedFunction {
+import java.io.Serializable;
+
+public class ArrayTabulatedFunction implements TabulatedFunction, Serializable {
     private FunctionPoint[] pointsList;
     private int pointsNumber;
 
@@ -31,6 +33,25 @@ public class ArrayTabulatedFunction implements TabulatedFunction {
         this.pointsNumber = values.length;
     }
 
+    public ArrayTabulatedFunction(FunctionPoint[] pointsList){
+        if (pointsList.length < 2){
+            throw new IllegalArgumentException("[!] Ошибка! Точек должно быть больше или равно двух.");
+        }
+        if (!isSortedByX(pointsList)){
+            throw new IllegalArgumentException("[!] Ошибка! Точки должны быть отсортированы по X.");
+        }
+        this.pointsList = pointsList;
+        this.pointsNumber = pointsList.length;
+    }
+
+    private boolean isSortedByX(FunctionPoint[] pointsList){
+        for (int i = 0; i < pointsList.length - 1; i++){
+            if (pointsList[i].getX() > pointsList[i + 1].getX()){
+                return false;
+            }
+        }
+        return true;
+    }
     public double getLeftDomainBorder(){
         //Возвращает координату X левой границы.
         return this.pointsList[0].getX();
@@ -52,9 +73,9 @@ public class ArrayTabulatedFunction implements TabulatedFunction {
         /*
              y2 - y1 = k(x2 - x1) + b
              k = (y2 - y1) / (x2 - x1)
-             b = y1 - k
+             b = y1 - kx
         */
-        double k = (this.pointsList[pointNumber].getY() - this.pointsList[pointNumber - 1].getY()) / (this.pointsList[pointNumber].getX() - this.pointsList[pointNumber - 1].getX());
+        double k = (this.pointsList[pointNumber].getY() - this.pointsList[pointNumber-1].getY()) / (this.pointsList[pointNumber].getX() - this.pointsList[pointNumber - 1].getX());
         double b = this.pointsList[pointNumber].getY() - k * this.pointsList[pointNumber].getX();
         return k * x + b;
     }
